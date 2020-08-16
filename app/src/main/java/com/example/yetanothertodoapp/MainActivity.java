@@ -1,9 +1,11 @@
 package com.example.yetanothertodoapp;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -20,6 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+
+    public static final String KEY_ITEM_TEXT = "item_text";
+    public static final String KEY_ITEM_POS = "item_pos";
+    public static final int EDIT_TEXT_CODE = 42;
 
     private List<String> items;
 
@@ -49,7 +55,20 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(), "Item removed", Toast.LENGTH_SHORT).show();
             }
         };
-        adapter = new ItemsAdapter(items, onLongClickListener);
+
+        ItemsAdapter.OnClickListener onClickListener = new ItemsAdapter.OnClickListener() {
+            @Override
+            public void onItemClicked(int position) {
+                Intent intent = new Intent(MainActivity.this, EditActivity.class);
+
+                intent.putExtra(KEY_ITEM_TEXT, items.get(position));
+                intent.putExtra(KEY_ITEM_POS, position);
+
+                startActivityForResult(intent, EDIT_TEXT_CODE);
+            }
+        };
+
+        adapter = new ItemsAdapter(items, onLongClickListener, onClickListener);
         rvItems.setAdapter(adapter);
         rvItems.setLayoutManager(new LinearLayoutManager(this));
 
@@ -66,6 +85,23 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(), "Item created", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK && requestCode == EDIT_TEXT_CODE) {
+            String itemText = data.getStringExtra(KEY_ITEM_TEXT);
+            int pos = data.getExtras().getInt(KEY_ITEM_POS);
+
+            items.set(pos, itemText);
+
+            saveItems();
+
+            adapter.notifyItemChanged(pos);
+
+            Toast.makeText(getApplicationContext(), "Item updated", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private File getDataFile() {
